@@ -220,8 +220,9 @@ class _FAST(BaseModel):
                         continue
 
                     # Negative shrink for gt, as described in paper
-                    polygon = Polygon(poly)
-                    distance = polygon.area * (1 - np.power(self.shrink_ratio, 2)) / polygon.length
+                    area = cv2.contourArea(poly)
+                    length = cv2.arcLength(poly, closed=True)
+                    distance = area * (1 - np.power(self.shrink_ratio, 2)) / length
                     subject = [tuple(coor) for coor in poly]
                     padding = pyclipper.PyclipperOffset()
                     padding.AddPath(subject, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)

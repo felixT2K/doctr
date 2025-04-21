@@ -216,8 +216,9 @@ class _DBNet:
             raise AttributeError("polygon should be a 2 dimensional array of coords")
 
         # Augment polygon by shrink_ratio
-        polygon_shape = Polygon(polygon)
-        distance = polygon_shape.area * (1 - np.power(self.shrink_ratio, 2)) / polygon_shape.length
+        area = cv2.contourArea(polygon)
+        length = cv2.arcLength(polygon, closed=True)
+        distance = area * (1 - np.power(self.shrink_ratio, 2)) / length
         subject = [tuple(coor) for coor in polygon]  # Get coord as list of tuples
         padding = pyclipper.PyclipperOffset()
         padding.AddPath(subject, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
@@ -328,8 +329,9 @@ class _DBNet:
                         continue
 
                     # Negative shrink for gt, as described in paper
-                    polygon = Polygon(poly)
-                    distance = polygon.area * (1 - np.power(self.shrink_ratio, 2)) / polygon.length
+                    area = cv2.contourArea(poly)
+                    length = cv2.arcLength(poly, closed=True)
+                    distance = area * (1 - np.power(self.shrink_ratio, 2)) / length
                     subject = [tuple(coor) for coor in poly]
                     padding = pyclipper.PyclipperOffset()
                     padding.AddPath(subject, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)

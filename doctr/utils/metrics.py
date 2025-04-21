@@ -4,10 +4,10 @@
 # See LICENSE or go to <https://opensource.org/licenses/Apache-2.0> for full license details.
 
 
+import cv2
 import numpy as np
 from anyascii import anyascii
 from scipy.optimize import linear_sum_assignment
-from shapely.geometry import Polygon
 
 __all__ = [
     "TextMatch",
@@ -150,30 +150,28 @@ def box_iou(boxes_1: np.ndarray, boxes_2: np.ndarray) -> np.ndarray:
 
 
 def polygon_iou(polys_1: np.ndarray, polys_2: np.ndarray) -> np.ndarray:
-    """Computes the IoU between two sets of rotated bounding boxes
+    """
+    Computes the IoU between two sets of rotated bounding boxes using OpenCV.
 
     Args:
-        polys_1: rotated bounding boxes of shape (N, 4, 2)
-        polys_2: rotated bounding boxes of shape (M, 4, 2)
-        mask_shape: spatial shape of the intermediate masks
-        use_broadcasting: if set to True, leverage broadcasting speedup by consuming more memory
+        polys_1: Rotated bounding boxes of shape (N, 4, 2)
+        polys_2: Rotated bounding boxes of shape (M, 4, 2)
 
     Returns:
-        the IoU matrix of shape (N, M)
+        IoU matrix of shape (N, M)
     """
     if polys_1.ndim != 3 or polys_2.ndim != 3:
-        raise AssertionError("expects boxes to be in format (N, 4, 2)")
+        raise AssertionError("Expects boxes to be in format (N, 4, 2)")
 
     iou_mat = np.zeros((polys_1.shape[0], polys_2.shape[0]), dtype=np.float32)
 
-    shapely_polys_1 = [Polygon(poly) for poly in polys_1]
-    shapely_polys_2 = [Polygon(poly) for poly in polys_2]
-
-    for i, poly1 in enumerate(shapely_polys_1):
-        for j, poly2 in enumerate(shapely_polys_2):
-            intersection_area = poly1.intersection(poly2).area
-            union_area = poly1.area + poly2.area - intersection_area
-            iou_mat[i, j] = intersection_area / union_area
+    for i, poly1 in enumerate(polys_1):
+        area1 = cv2.contourArea(poly1.astype(np.float32))
+        for j, poly2 in enumerate(polys_2):
+            area2 = cv2.contourArea(poly2.astype(np.float32))
+            inter, _ = cv2.intersectConvexConvex(poly1.astype(np.float32), poly2.astype(np.float32))
+            union = area1 + area2 - inter
+            iou_mat[i, j] = inter / union if union > 0 else 0.0
 
     return iou_mat
 
